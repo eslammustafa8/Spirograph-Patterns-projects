@@ -1,8 +1,13 @@
-from tkinter import Tk, Entry, Button, Label, StringVar
 import turtle
 import math
+import tkinter as tk
 
-def draw_triangle_spirograph(radius, small_radius, pen_colors, shape_params):
+# Function to draw a Spirograph pattern based on the selected shape and colors
+def draw_spirograph(radius, small_radius, colors, shape, side_length, inner_radius, outer_radius):
+    window = turtle.Screen()
+    window.bgcolor("black")
+    window.title("Spirograph Pattern")
+
     pen = turtle.Turtle()
     pen.shape("turtle")
     pen.speed(0)
@@ -13,168 +18,119 @@ def draw_triangle_spirograph(radius, small_radius, pen_colors, shape_params):
     steps = int(360 / gcd)
     num_shapes = 36
 
-    color_count = len(pen_colors)
+    color_count = len(colors)
     current_color = 0
 
     for _ in range(steps * num_shapes):
-        pen.color(pen_colors[current_color])
+        pen.color(colors[current_color])
         current_color = (current_color + 1) % color_count
 
-        angle += (360 / (steps * num_shapes))
-        side_length, corners = shape_params
         pen.penup()
-        pen.goto(radius * math.cos(math.radians(angle)), radius * math.sin(math.radians(angle)))
+        x = radius * math.cos(math.radians(angle))
+        y = radius * math.sin(math.radians(angle))
+        pen.goto(x, y)
         pen.pendown()
-        for _ in range(corners):
-            pen.forward(side_length)
-            pen.left(120)
+        
+        if shape == "triangle":
+            for _ in range(3):
+                pen.forward(side_length)
+                pen.left(120)
+        elif shape == "circle":
+            pen.circle(outer_radius)
+        elif shape == "square":
+            for _ in range(4):
+                pen.forward(side_length)
+                pen.left(90)
 
-    turtle.done()
+        angle += 360 / (steps * num_shapes)
 
-def draw_circle_spirograph(radius, small_radius, pen_colors, shape_params):
-    pen = turtle.Turtle()
-    pen.shape("turtle")
-    pen.speed(0)
-    pen.width(2)
+    pen.hideturtle()
+    window.mainloop()
 
-    angle = 0
-    gcd = math.gcd(int(radius), int(small_radius))
-    steps = int(360 / gcd)
-    num_shapes = 36
+# Function to update the GUI when the number of colors is changed
+def on_color_count_change(*args):
+    for widget in color_frame.winfo_children():
+        widget.destroy()
 
-    color_count = len(pen_colors)
-    current_color = 0
+    try:
+        for i in range(color_count.get()):
+            tk.Label(color_frame, text=f"Color {i + 1}:", bg='black', fg='white').pack()
+            color_input = tk.Entry(color_frame, bg='sky blue', fg='black', textvariable=colors_vars[i])
+            color_input.pack()
+    except tk.TclError:
+        pass
 
-    for _ in range(steps * num_shapes):
-        pen.color(pen_colors[current_color])
-        current_color = (current_color + 1) % color_count
+# Function to gather input and initiate drawing
+def on_submit():
+    colors = [var.get() for var in colors_vars[:color_count.get()]]
+    draw_spirograph(radius_var.get(), small_radius_var.get(), colors, shape_var.get(),
+                    side_length_var.get(), inner_radius_var.get(), outer_radius_var.get())
+    root.quit()
 
-        angle += (360 / (steps * num_shapes))
-        inner_radius, outer_radius = shape_params
-        pen.penup()
-        pen.goto(inner_radius * math.cos(math.radians(angle)), inner_radius * math.sin(math.radians(angle)))
-        pen.pendown()
-        pen.circle(outer_radius, 360)
+# Main Tkinter window configuration
+root = tk.Tk()
+root.title("Spirograph Parameters")
+root.config(bg='black')
+root.geometry("400x600")
 
-    turtle.done()
+# Variable definitions
+shape_var = tk.StringVar(value="triangle")
+radius_var = tk.DoubleVar(value=150)
+small_radius_var = tk.DoubleVar(value=50)
+color_count = tk.IntVar(value=2)
+colors_vars = [tk.StringVar(value="black") for _ in range(10)]
+side_length_var = tk.DoubleVar(value=100)
+inner_radius_var = tk.DoubleVar(value=50)
+outer_radius_var = tk.DoubleVar(value=50)
 
-def draw_square_spirograph(radius, small_radius, pen_colors, shape_params):
-    pen = turtle.Turtle()
-    pen.shape("turtle")
-    pen.speed(0)
-    pen.width(2)
+# Number of Colors input
+tk.Label(root, text="Number of Colors:", bg='black', fg='white').pack()
+color_count_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=color_count)
+color_count_entry.pack()
+color_count.trace('w', on_color_count_change)
 
-    angle = 0
-    gcd = math.gcd(int(radius), int(small_radius))
-    steps = int(360 / gcd)
-    num_shapes = 36
+# Color input frame setup
+color_frame = tk.Frame(root, bg='black')
+color_frame.pack()
 
-    color_count = len(pen_colors)
-    current_color = 0
+# Shape selection dropdown
+tk.Label(root, text="Shape:", bg='black', fg='white').pack()
+shape_menu = tk.OptionMenu(root, shape_var, "triangle", "circle", "square")
+shape_menu.config(bg='blue', fg='white', activebackground='light blue')
+shape_menu["menu"].config(bg='black', fg='white')
+shape_menu.pack()
 
-    for _ in range(steps * num_shapes):
-        pen.color(pen_colors[current_color])
-        current_color = (current_color + 1) % color_count
+# Radius input field
+tk.Label(root, text="Radius:", bg='black', fg='white').pack()
+radius_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=radius_var)
+radius_entry.pack()
 
-        angle += (360 / (steps * num_shapes))
-        side_length = shape_params
-        pen.penup()
-        pen.goto(radius * math.cos(math.radians(angle)), radius * math.sin(math.radians(angle)))
-        pen.pendown()
-        for _ in range(4):
-            pen.forward(side_length)
-            pen.left(90)
+# Small Radius input field
+tk.Label(root, text="Small Radius:", bg='black', fg='white').pack()
+small_radius_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=small_radius_var)
+small_radius_entry.pack()
 
-    turtle.done()
+# Side Length input field
+tk.Label(root, text="Side Length (for triangle and square):", bg='black', fg='white').pack()
+side_length_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=side_length_var)
+side_length_entry.pack()
 
-def draw_spirograph_by_shape(shape):
-    if shape == "triangle":
-        side_length = float(input("Enter side length of the triangle: "))
-        corners = 3
-        shape_params = (side_length, corners)
-        draw_triangle_spirograph(radius, small_radius, pen_colors, shape_params)
-    elif shape == "circle":
-        inner_radius = float(input("Enter inner radius for the circle: "))
-        outer_radius = float(input("Enter outer radius for the circle: "))
-        shape_params = (inner_radius, outer_radius)
-        draw_circle_spirograph(radius, small_radius, pen_colors, shape_params)
-    elif shape == "square":
-        side_length = float(input("Enter side length of the square: "))
-        shape_params = side_length
-        draw_square_spirograph(radius, small_radius, pen_colors, shape_params)
+# Inner Radius input field
+tk.Label(root, text="Inner Radius (for circle):", bg='black', fg='white').pack()
+inner_radius_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=inner_radius_var)
+inner_radius_entry.pack()
 
-radius = float(input("Enter radius of the Spirograph: "))
-small_radius = float(input("Enter small radius of the Spirograph: "))
-num_colors = int(input("Enter the number of colors: "))
-pen_colors = []
+# Outer Radius input field
+tk.Label(root, text="Outer Radius (for circle):", bg='black', fg='white').pack()
+outer_radius_entry = tk.Entry(root, bg='sky blue', fg='black', textvariable=outer_radius_var)
+outer_radius_entry.pack()
 
-for i in range(num_colors):
-    color_option = input(f"Enter color {i + 1} (name, RGB values, or hexadecimal code): ")
-    pen_colors.append(color_option)
+# Initial color fields setup
+on_color_count_change()
 
-shape = input("Enter shape for Spirograph (triangle, circle, square): ")
-draw_spirograph_by_shape(shape)
+# Draw button
+submit_button = tk.Button(root, text="Draw Spirograph", command=on_submit, bg='blue', fg='white')
+submit_button.pack()
 
-
-
-# Function to draw star-shaped spirograph
-def draw_star_spirograph():
-    side_length = float(entry_star.get())
-    corners = 5
-    draw_triangle_spirograph(radius, small_radius, pen_colors, (side_length, corners))
-
-# Function to draw square-shaped spirograph
-def draw_square_spirograph():
-    side_length = float(entry_square.get())
-    draw_square_spirograph(radius, small_radius, pen_colors, side_length)
-
-# Function to draw triangle-shaped spirograph
-def draw_triangle_spirograph():
-    inner_radius = float(entry_triangle_inner.get())
-    outer_radius = float(entry_triangle_outer.get())
-    draw_circle_spirograph(radius, small_radius, pen_colors, (inner_radius, outer_radius))
-
-radius = 100
-small_radius = 30
-num_colors = 5  # Example number of colors
-pen_colors = ["red", "green", "blue", "yellow", "purple"]
-
-myview = Tk()
-myview.geometry("800x500")
-
-# Entry for star-shaped spirograph
-label_star = Label(myview, text="Enter side length for star:")
-entry_star = Entry(myview)
-label_star.pack(pady=5)
-entry_star.pack(pady=5)
-
-# Button to draw star-shaped spirograph
-button_star = Button(myview, text="Draw Star Spirograph", bg="red", fg="black", command=draw_star_spirograph)
-button_star.pack(pady=10)
-
-# Entry for square-shaped spirograph
-label_square = Label(myview, text="Enter side length for square:")
-entry_square = Entry(myview)
-label_square.pack(pady=5)
-entry_square.pack(pady=5)
-
-# Button to draw square-shaped spirograph
-button_square = Button(myview, text="Draw Square Spirograph", bg="yellow", fg="black", command=draw_square_spirograph)
-button_square.pack(pady=10)
-
-# Entry for triangle-shaped spirograph
-label_triangle_inner = Label(myview, text="Enter inner radius for triangle:")
-entry_triangle_inner = Entry(myview)
-label_triangle_inner.pack(pady=5)
-entry_triangle_inner.pack(pady=5)
-
-label_triangle_outer = Label(myview, text="Enter outer radius for triangle:")
-entry_triangle_outer = Entry(myview)
-label_triangle_outer.pack(pady=5)
-entry_triangle_outer.pack(pady=5)
-
-# Button to draw triangle-shaped spirograph
-button_triangle = Button(myview, text="Draw Triangle Spirograph", bg="blue", fg="black", command=draw_triangle_spirograph)
-button_triangle.pack(pady=10)
-
-myview.mainloop()
+# Start the Tkinter event loop
+root.mainloop()
